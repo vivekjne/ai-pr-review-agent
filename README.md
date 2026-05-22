@@ -352,6 +352,7 @@ jobs:
       - uses: vivekjne/ai-pr-review-agent@main
         with:
           opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 This checks out the agent repo, installs deps, and runs the review — all from

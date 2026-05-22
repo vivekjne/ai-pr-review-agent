@@ -7,9 +7,10 @@
 #     - uses: vivekjne/ai-pr-review-agent@main
 #       with:
 #         opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
+#         github-token: ${{ secrets.GITHUB_TOKEN }}
 #
-# The agent's own repo is auto-checked out by the `uses:` directive — no
-# additional checkout needed.
+# github-token is required — GitHub's auto-generated token must be passed
+# explicitly because composite actions don't inherit env vars automatically.
 # =============================================================================
 name: "AI PR Review"
 description: "Automatically reviews pull requests using AI"
@@ -18,6 +19,9 @@ author: "AI PR Review Agent"
 inputs:
   opencode-api-key:
     description: "OpenCode Go API key"
+    required: true
+  github-token:
+    description: "GitHub token (use ${{ secrets.GITHUB_TOKEN }})"
     required: true
   opencode-base-url:
     description: "API base URL"
@@ -56,7 +60,7 @@ runs:
 
     - name: Run AI PR Review
       env:
-        # GITHUB_TOKEN is automatically set by GitHub Actions — don't override it
+        GITHUB_TOKEN: ${{ inputs.github-token }}
         OPENCODE_API_KEY: ${{ inputs.opencode-api-key }}
         OPENCODE_BASE_URL: ${{ inputs.opencode-base-url }}
         OPENCODE_MODEL: ${{ inputs.opencode-model }}
