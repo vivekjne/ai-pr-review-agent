@@ -1,0 +1,85 @@
+# =============================================================================
+# AI PR Review — GitHub Actions Workflow
+# =============================================================================
+# Runs automatically on pull request events.
+# Posts/updates a comment with the AI-generated code review.
+#
+# Setup:
+#   Add OPENCODE_API_KEY as a repository secret:
+#     Settings → Secrets and variables → Actions → New repository secret
+#
+# Variables:
+#   GITHUB_TOKEN       → auto-provided by Actions (has issues:write)
+#   OPENCODE_API_KEY   → must be added as a secret (required)
+#   OPENCODE_BASE_URL  → defaults below; override as a secret if needed
+#   OPENCODE_MODEL     → defaults below; override as a secret if needed
+# =============================================================================
+name: AI PR Review
+
+on:
+  pull_request:
+    types:
+      - opened           # new PR created
+      - synchronize       # new commits pushed to existing PR
+      - reopened          # closed PR re-opened
+      - ready_for_review  # draft → ready
+
+# ── Least-privilege permissions ─────────────────────────────────────────────
+#   contents: read       → checkout the repo
+#   pull-requests: read  → fetch PR metadata and diff
+#   issues: write        → post/update PR comments (PRs use the issues API)
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    # ── Skip draft PRs ────────────────────────────────────────────────────
+    # The 'opened' event fires for draft PRs too. This guard skips them
+    # until the author marks the PR as "ready for review".
+    if: github.event.pull_request.draft == false
+
+    steps:
+      # ── 1. Check out the repository code ────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python ────────────────────────────────────────────────
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip  # caches requirements.txt installs across runs
+
+      # ── 3. Install project dependencies ─────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 4. Run AI PR Review ─────────────────────────────────────────────
+      # Environment variables:
+      #   GITHUB_TOKEN        → auto-provided with issues:write scope
+      #   OPENCODE_API_KEY    → must be configured as a Actions secret
+      #   OPENCODE_BASE_URL   → OpenCode Go API endpoint
+      #   OPENCODE_MODEL      → the review model
+      #
+      # The GITHUB_REPOSITORY env var (set automatically by Actions) is in
+      # the form "owner/repo". We split it with bash parameter expansion:
+      #   ${var%/*}  → removes /repo  → "owner"
+      #   ${var#*/}  → removes owner/ → "repo"
+      - name: Run AI PR Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENCODE_BASE_URL: ${{ secrets.OPENCODE_BASE_URL || 'https://opencode.ai/zen/go/v1' }}
+          OPENCODE_MODEL: ${{ secrets.OPENCODE_MODEL || 'deepseek-v4-flash' }}
+        run: |
+          python -m app.cli.review_pr \
+            --owner "${GITHUB_REPOSITORY%/*}" \
+            --repo "${GITHUB_REPOSITORY#*/}" \
+            --pull-number "${{ github.event.pull_request.number }}" \
+            --post-comment \
+            --fail-on-high-risk \
+            --fail-on-request-changes

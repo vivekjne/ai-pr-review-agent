@@ -1,0 +1,43 @@
+# ── AI PR Review — Repository Configuration ──────────────────────────────────
+# Place this file in the root of your repository to customise the review agent.
+# All fields are optional — delete what you don't need.
+# ──────────────────────────────────────────────────────────────────────────────
+
+review:
+  # Use multi-agent review (runs specialist agents in parallel)
+  # Costs ~6x more tokens but provides deeper, more focused reviews
+  multi_agent: false
+
+  # Review mode: "full", "quick", or "security"
+  mode: full
+
+  # Exit with non-zero code on high-risk findings (CI use)
+  fail_on_high_risk: false
+
+  # Exit with non-zero code if AI recommends "Request Changes"
+  fail_on_request_changes: false
+
+  # Max files to include in a single review
+  max_files: 20
+
+  # Max characters of diff text to send to the LLM
+  max_patch_chars: 12000
+
+# Files to always skip (glob patterns merged with built-in rules)
+ignore:
+  - "package-lock.json"
+  - "pnpm-lock.yaml"
+  - "yarn.lock"
+  - "dist/**"
+  - "build/**"
+  - "*.min.js"
+
+# Focus areas for the AI reviewer (limit attention to specific concerns)
+# Options: bugs, security, performance, maintainability, tests
+# Omit the field entirely to use the default (all areas).
+focus:
+  - bugs
+  - security
+  - performance
+  - maintainability
+  - tests

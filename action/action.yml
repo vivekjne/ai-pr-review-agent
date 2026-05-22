@@ -1,0 +1,80 @@
+# =============================================================================
+# AI PR Review — Composite GitHub Action
+# =============================================================================
+# This action can be referenced from any repo's workflow.
+#
+# Usage in another repo:
+#
+#   .github/workflows/pr-review.yml
+#   ──────────────────────────────
+#   name: AI PR Review
+#   on:
+#     pull_request:
+#       types: [opened, synchronize, reopened, ready_for_review]
+#   permissions:
+#     contents: read
+#     pull-requests: read
+#     issues: write
+#   jobs:
+#     review:
+#       runs-on: ubuntu-latest
+#       if: github.event.pull_request.draft == false
+#       steps:
+#         - uses: your-org/ai-pr-review-agent@main
+#           with:
+#             opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
+#           env:
+#             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# =============================================================================
+name: "AI PR Review"
+description: "Automatically reviews pull requests using AI"
+author: "AI PR Review Agent"
+
+inputs:
+  opencode-api-key:
+    description: "OpenCode Go API key"
+    required: true
+  opencode-base-url:
+    description: "API base URL"
+    required: false
+    default: "https://opencode.ai/zen/go/v1"
+  opencode-model:
+    description: "Model name"
+    required: false
+    default: "deepseek-v4-flash"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout the agent repository
+      uses: actions/checkout@v4
+      with:
+        repository: your-org/ai-pr-review-agent
+        path: .ai-review-agent
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+        cache-dependency-path: .ai-review-agent/requirements.txt
+
+    - name: Install dependencies
+      run: pip install -r .ai-review-agent/requirements.txt
+      shell: bash
+
+    - name: Run AI PR Review
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+        OPENCODE_API_KEY: ${{ inputs.opencode-api-key }}
+        OPENCODE_BASE_URL: ${{ inputs.opencode-base-url }}
+        OPENCODE_MODEL: ${{ inputs.opencode-model }}
+      run: |
+        python .ai-review-agent/app/cli/review_pr.py \
+          --owner "${GITHUB_REPOSITORY%/*}" \
+          --repo "${GITHUB_REPOSITORY#*/}" \
+          --pull-number "${{ github.event.pull_request.number }}" \
+          --post-comment \
+          --fail-on-high-risk \
+          --fail-on-request-changes
+      shell: bash

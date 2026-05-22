@@ -1,0 +1,30 @@
+# =============================================================================
+# AI PR Review Agent — Python Dependencies
+# =============================================================================
+# Core HTTP client for async GitHub API calls and LLM requests
+httpx>=0.27.0
+
+# Data validation using Python type hints — catch bugs at definition time, not runtime
+pydantic>=2.7.0
+
+# Loads settings from environment variables + .env files into typed Python objects
+pydantic-settings>=2.3.0
+
+# Modern CLI framework (built on Click) — uses type hints for automatic help text
+typer>=0.12.0
+
+# OpenAI Python SDK — we use it with a custom base_url to talk to OpenCode Go
+openai>=1.30.0
+
+# Loads .env files into os.environ automatically
+python-dotenv>=1.0.0
+
+# YAML parsing for .ai-review.yml config file
+pyyaml>=6.0
+
+# Beautiful terminal output: colored text, tables, syntax highlighting
+rich>=13.7.0
+
+# FastAPI + ASGI server for optional web API mode
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
