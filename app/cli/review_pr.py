@@ -13,8 +13,18 @@ Usage:
     python -m app.main -u "https://github.com/owner/repo/pull/123" -o review.md -v
 """
 
+import os
+import sys
+
 import typer
 from typing import Optional
+
+# ── Ensure the project root is on sys.path ──────────────────────────────────
+# This makes `from app.xxx import yyy` work when the script is run directly
+# (e.g. from a GitHub Action composite action where cwd is the target repo).
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 cli_app = typer.Typer(
     help="Run an AI-powered code review on a GitHub pull request",
