@@ -412,6 +412,20 @@ GitHub Actions triggers ai-pr-review.yml
 | `synchronize` | New commits pushed |
 | `reopened` | Closed PR re-opened |
 | `ready_for_review` | Draft → ready |
+| `workflow_dispatch` | **Manual trigger** — review an existing PR |
+
+### 4. Review an existing PR
+
+Existing PRs don't trigger `pull_request` events. Use **manual dispatch**:
+
+1. Go to your repo → **Actions** tab
+2. Select **AI PR Review** workflow
+3. Click **Run workflow**
+4. Enter the PR number
+5. Click **Run**
+
+The workflow will review that PR and post/update the comment, just like it
+would for a newly opened PR.
 
 ### 4. Default workflow
 

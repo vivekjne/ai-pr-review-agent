@@ -1,30 +1,14 @@
 # =============================================================================
 # AI PR Review — Composite GitHub Action
 # =============================================================================
-# This action can be referenced from any repo's workflow.
+# Can be referenced from any repo:
 #
-# Usage in another repo:
+#   steps:
+#     - uses: vivekjne/ai-pr-review-agent@main
+#       with:
+#         opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
 #
-#   .github/workflows/pr-review.yml
-#   ──────────────────────────────
-#   name: AI PR Review
-#   on:
-#     pull_request:
-#       types: [opened, synchronize, reopened, ready_for_review]
-#   permissions:
-#     contents: read
-#     pull-requests: read
-#     issues: write
-#   jobs:
-#     review:
-#       runs-on: ubuntu-latest
-#       if: github.event.pull_request.draft == false
-#       steps:
-#         - uses: your-org/ai-pr-review-agent@main
-#           with:
-#             opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
-#           env:
-#             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# Supports manual trigger for existing PRs via workflow_dispatch.
 # =============================================================================
 name: "AI PR Review"
 description: "Automatically reviews pull requests using AI"
@@ -42,6 +26,10 @@ inputs:
     description: "Model name"
     required: false
     default: "deepseek-v4-flash"
+  pr-number:
+    description: "PR number (for manual dispatch on existing PRs)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -49,7 +37,7 @@ runs:
     - name: Checkout the agent repository
       uses: actions/checkout@v4
       with:
-        repository: your-org/ai-pr-review-agent
+        repository: vivekjne/ai-pr-review-agent
         path: .ai-review-agent
 
     - name: Setup Python
@@ -63,6 +51,16 @@ runs:
       run: pip install -r .ai-review-agent/requirements.txt
       shell: bash
 
+    - name: Resolve PR number
+      id: pr
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.pr-number }}" ]; then
+          echo "number=${{ inputs.pr-number }}" >> $GITHUB_OUTPUT
+        else
+          echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Run AI PR Review
       env:
         GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
@@ -73,7 +71,7 @@ runs:
         python .ai-review-agent/app/cli/review_pr.py \
           --owner "${GITHUB_REPOSITORY%/*}" \
           --repo "${GITHUB_REPOSITORY#*/}" \
-          --pull-number "${{ github.event.pull_request.number }}" \
+          --pull-number "${{ steps.pr.outputs.number }}" \
           --post-comment \
           --fail-on-high-risk \
           --fail-on-request-changes
