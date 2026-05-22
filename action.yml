@@ -58,6 +58,39 @@ runs:
           echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
         fi
 
+    - name: Test token permissions
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        echo "Testing token on Issues API..."
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.pr.outputs.number }}/comments")
+        echo "Issues API status: $STATUS"
+        if [ "$STATUS" = "403" ]; then
+          echo "❌ Token doesn't have issues:write permission for this repo."
+          echo "   Make sure the PAT has 'repo' scope or use a classic PAT."
+        elif [ "$STATUS" = "401" ]; then
+          echo "❌ Token is invalid or expired."
+        elif [ "$STATUS" = "200" ]; then
+          echo "✅ Token has read access to issues."
+        fi
+
+    - name: Test OpenCode API key
+      shell: bash
+      env:
+        OPENCODE_API_KEY: ${{ inputs.opencode-api-key }}
+      run: |
+        echo "Testing OpenCode API key..."
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer $OPENCODE_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{"model":"deepseek-v4-flash","messages":[{"role":"user","content":"hello"}]}' \
+          "https://opencode.ai/zen/go/v1/chat/completions")
+        echo "OpenCode API status: $STATUS"
+
     - name: Run AI PR Review
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}

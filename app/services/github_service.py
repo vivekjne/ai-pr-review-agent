@@ -293,6 +293,10 @@ class GitHubService:
             body=body,
         )
 
+    async def verify_token(self) -> dict[str, Any]:
+        """Test that the current token works by calling the GitHub API."""
+        return await self._get("/")
+
     async def create_inline_review(
         self,
         owner: str,
