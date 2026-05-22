@@ -91,7 +91,7 @@ class LlmService:
         self._client = AsyncOpenAI(
             api_key=resolved_key,
             base_url=resolved_base,
-            timeout=60.0,
+            timeout=120.0,  # LLM can be slow for large diffs
         )
 
     # ── Public API ──────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ class LlmService:
             )
         except APITimeoutError:
             raise LlmServiceError(
-                "LLM request timed out after 60s.\n"
+                "LLM request timed out after 120s.\n"
                 "  → Check your network connection or try a smaller diff."
             )
         except APIConnectionError:
