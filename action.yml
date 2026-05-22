@@ -1,14 +1,15 @@
 # =============================================================================
 # AI PR Review — Composite GitHub Action
 # =============================================================================
-# Can be referenced from any repo:
+# Use from any repo:
 #
 #   steps:
 #     - uses: vivekjne/ai-pr-review-agent@main
 #       with:
 #         opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
 #
-# Supports manual trigger for existing PRs via workflow_dispatch.
+# The agent's own repo is auto-checked out by the `uses:` directive — no
+# additional checkout needed.
 # =============================================================================
 name: "AI PR Review"
 description: "Automatically reviews pull requests using AI"
@@ -34,21 +35,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout the agent repository
-      uses: actions/checkout@v4
-      with:
-        repository: vivekjne/ai-pr-review-agent
-        path: .ai-review-agent
-
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: pip
-        cache-dependency-path: .ai-review-agent/requirements.txt
+        cache-dependency-path: requirements.txt
 
     - name: Install dependencies
-      run: pip install -r .ai-review-agent/requirements.txt
+      run: pip install -r ${{ github.action_path }}/requirements.txt
       shell: bash
 
     - name: Resolve PR number
@@ -56,9 +51,9 @@ runs:
       shell: bash
       run: |
         if [ -n "${{ inputs.pr-number }}" ]; then
-          echo "number=${{ inputs.pr-number }}" >> $GITHUB_OUTPUT
+          echo "number=${{ inputs.pr-number }}" >> "$GITHUB_OUTPUT"
         else
-          echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Run AI PR Review
@@ -68,7 +63,7 @@ runs:
         OPENCODE_BASE_URL: ${{ inputs.opencode-base-url }}
         OPENCODE_MODEL: ${{ inputs.opencode-model }}
       run: |
-        python .ai-review-agent/app/cli/review_pr.py \
+        python ${{ github.action_path }}/app/cli/review_pr.py \
           --owner "${GITHUB_REPOSITORY%/*}" \
           --repo "${GITHUB_REPOSITORY#*/}" \
           --pull-number "${{ steps.pr.outputs.number }}" \
