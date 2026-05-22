@@ -349,11 +349,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
-      - uses: your-org/ai-pr-review-agent@main
+      - uses: vivekjne/ai-pr-review-agent@main
         with:
           opencode-api-key: ${{ secrets.OPENCODE_API_KEY }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 This checks out the agent repo, installs deps, and runs the review — all from

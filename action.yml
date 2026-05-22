@@ -56,7 +56,7 @@ runs:
 
     - name: Run AI PR Review
       env:
-        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OPENCODE_API_KEY: ${{ inputs.opencode-api-key }}
         OPENCODE_BASE_URL: ${{ inputs.opencode-base-url }}
         OPENCODE_MODEL: ${{ inputs.opencode-model }}
